@@ -19,6 +19,7 @@ Gem::Specification.new do |s|
 
   s.add_dependency 'sunspot_rails', '>= 1.2'
   s.add_dependency 'sunspot_solr', '>= 1.2'
+  s.add_dependency 'activesupport', '~> 3'
 
   s.add_development_dependency 'rspec', '~> 2.5'
 end

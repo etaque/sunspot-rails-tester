@@ -1,5 +1,6 @@
 require 'net/http'
 require 'forwardable'
+require 'active_support/core_ext/kernel'
 
 module Sunspot
   module Rails
@@ -10,15 +11,21 @@ module Sunspot
         extend Forwardable
         
         attr_accessor :server, :started, :pid
-        
+
         def start_original_sunspot_session
           unless started?
-            self.server = Sunspot::Rails::Server.new
+            silence_stream($stdout) do
+              silence_stream($stderr) do
+                self.server = Sunspot::Rails::Server.new
+              end
+            end
             self.started = Time.now
             self.pid = fork do
-              $stderr.reopen('/dev/null')
-              $stdout.reopen('/dev/null')
-              server.run
+              silence_stream($stdout) do
+                silence_stream($stderr) do
+                  server.run
+                end
+              end
             end
             kill_at_exit
             give_feedback
@@ -34,8 +41,13 @@ module Sunspot
         end
         
         def give_feedback
-          puts 'Sunspot server is starting...' while starting
-          puts "Sunspot server took #{seconds} seconds to start"
+          if defined?(::Rails)
+            ::Rails.logger.info 'Sunspot server is starting...' while starting
+            ::Rails.logger.info "Sunspot server took #{seconds} seconds to start"
+          else
+            puts 'Sunspot server is starting...' while starting
+            puts "Sunspot server took #{seconds} seconds to start"
+          end
         end
       
         def starting
